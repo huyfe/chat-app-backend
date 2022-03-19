@@ -4,9 +4,12 @@ const cors = require('cors');
 
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+
 // Import Routes
 const authRoute = require('./routes/auth');
+const postRoute = require('./routes/posts');
 
+// Config env 
 dotenv.config();
 
 // Connect to database mongodb
@@ -17,6 +20,7 @@ app.use(express.json());
 app.use(cors());
 
 // Route Middlewares
-app.use('/api/user', authRoute)
+app.use('/api/user', authRoute);
+app.use('/api/posts', postRoute);
 
 app.listen(3000, () => console.log("Server Up and running "))
