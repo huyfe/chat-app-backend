@@ -58,14 +58,28 @@ router.post('/login', async (req, res) => {
         return res.status(400).send('Invalid password');
     }
 
+
     // Create and assign a token
     const payload = { _id: user._id };
     const secretKey = process.env.TOKEN_SECRET;
     const token = jwt.sign(payload, secretKey);
     res.header('auth-token', token);
 
-    res.status(200).send({ message: 'Logged in', token: token });
+    // Store token into database
+    const updateTokenByEmail = await User.updateOne({ email: req.body.email }, { token: token });
+
+    // Return success response
+    res.status(200).send({ message: 'Logged in', profile: { id: user._id, name: user.name, email: user.email, token: token } });
 })
 
+// GET PROFILE 
+router.post('/profile', async (req, res) => {
+    // Checking if the email exists
+    const user = await User.findOne({ token: req.body.token });
+    if (!user) {
+        return res.status(400).send('Token is not equal');
+    }
+    res.status(200).send({ profile: { id: user._id, name: user.name, email: user.email, token: user.token || "No token" } });
+})
 
 module.exports = router; // Export in order that index.js can use
