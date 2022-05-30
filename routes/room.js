@@ -2,7 +2,9 @@ const router = require('express').Router(); // import router to generate routes
 const Room = require('../model/Room'); // import model Room
 const verify = require('./verifyToken'); // import middleware verify auth
 
-// GET ALL MY ROOM
+/*
+* GET ALL MY ROOM
+*/
 router.get('/me', verify, async (req, res) => {
     const idUser = req.user._id;
     try {
@@ -11,16 +13,11 @@ router.get('/me', verify, async (req, res) => {
         // Return slug, avatar, fullName of friend 
         // Return last time of the chat, last text of the chat
         const roomListByIdUserCustom = roomListByIdUser.map(room => {
-
-
-
             let slug = "";
             let avatar = "";
             let fullName = "";
             let lastTime = "";
             let lastText = "";
-
-
 
             room.members.forEach((member, index) => {
                 if (member.idMember !== idUser) {
@@ -30,8 +27,6 @@ router.get('/me', verify, async (req, res) => {
                 }
             })
 
-
-
             // Get last time of message of messagesData of room 
             const lastMessages = room.messagesData[room.messagesData.length - 1]; // get last item of array
             const lastMessage = lastMessages.messages[lastMessages.messages.length - 1]; // get last item of array
@@ -39,6 +34,7 @@ router.get('/me', verify, async (req, res) => {
             lastText = lastMessage.text;
 
             const result = {
+                id: room._id,
                 slug,
                 avatar,
                 fullName,
@@ -49,15 +45,28 @@ router.get('/me', verify, async (req, res) => {
 
             return result;
         })
-
-
-
         res.status(200).send(roomListByIdUserCustom);
-
     }
     catch {
-        res.status(404).send({ message: "Your rooms are not found" })
+        res.status(404).send({ message: "Your rooms are not found" });
     }
-})
+});
+
+/*
+* GET ROOM DETAIL 
+*/
+router.get('/:id', verify, async (req, res) => {
+    const id = req.params.id;
+    try {
+        const roomDetail = await Room.findOne({ _id: id }).exec();
+        if (!roomDetail) {
+            throw new Error("Data not found");
+        }
+        res.status(200).send(roomDetail);
+    }
+    catch (err) {
+        res.status(500).send({ meesage: "Data not found" });
+    }
+});
 
 module.exports = router;
