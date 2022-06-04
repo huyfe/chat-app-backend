@@ -8,7 +8,7 @@ const verify = require('./verifyToken'); // import middleware verify auth
 router.get('/me', verify, async (req, res) => {
     const idUser = req.user._id;
     try {
-        const roomListByIdUser = await Room.find({ idMember: idUser }).exec();
+        const roomListByIdUser = await Room.find({ "members.idMember": idUser }).exec();
 
         // Return slug, avatar, fullName of friend 
         // Return last time of the chat, last text of the chat
