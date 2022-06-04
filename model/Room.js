@@ -13,7 +13,7 @@ const message = new mongoose.Schema({
         type: Date,
         default: new Date(),
     },
-    isReplay: {
+    isRead: {
         type: Boolean,
         default: false,
     }
@@ -48,6 +48,11 @@ const member = new mongoose.Schema({
     fullName: {
         type: String,
         required: true,
+    },
+    isTyping: {
+        type: Boolean,
+        required: false,
+        default: false,
     },
     slug: { type: String, slug: "fullName" },
 })
