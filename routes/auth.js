@@ -40,6 +40,7 @@ router.post('/register', async (req, res) => {
 
 // LOGIN
 router.post('/login', async (req, res) => {
+
     // Validation
     const { error } = loginValidation(req.body);
     if (error) {
@@ -58,7 +59,6 @@ router.post('/login', async (req, res) => {
         return res.status(400).send('Invalid password');
     }
 
-
     // Create and assign a token
     const payload = { _id: user._id };
     const secretKey = process.env.TOKEN_SECRET;
@@ -66,7 +66,29 @@ router.post('/login', async (req, res) => {
     res.header('auth-token', token);
 
     // Store token into database
-    const updateTokenByEmail = await User.updateOne({ email: req.body.email }, { token: token });
+    // const updateTokenByEmail = await User.updateOne({ email: req.body.email }, { token: token });
+    const updateTokenByEmail = await User.updateOne({ email: req.body.email }, { "$set": { "token": token, "status": "online" } });
+
+    // Socket io 
+    // let socket_id = [];
+    // const io = req.app.get('socketio');
+    // io.on('connection', socket => {
+    //     socket_id.push(user.id);
+    //     console.log('A new user has connected: ');
+
+    //     // if (socket_id[0] === user.id) {
+    //     //     // remove the connection listener for any subsequent 
+    //     //     // connections with the same ID
+    //     //     io.removeAllListeners('connection');
+    //     // }
+    //     socket.on('hello message', msg => {
+    //         console.log('just got: ', msg);
+    //         socket.emit('chat message', 'hi from server');
+    //     })
+    // })
+    // io.on('disconnection', () => {
+    //     console.log("A user has left");
+    // })
 
     // Return success response
     res.status(200).send({ message: 'Logged in', profile: { id: user._id, name: user.name, email: user.email, token: token } });

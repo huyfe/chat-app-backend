@@ -29,6 +29,7 @@ const userSchema = new mongoose.Schema({
     status: {
         type: String,
         required: false,
+        default: "offline",
     },
     createdAt: {
         type: Date,
