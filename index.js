@@ -2,7 +2,14 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 
+// Config socket io 
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server);
+app.set('socketio', io); // Set to use io object in every express route
 
+// Mongoose
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
