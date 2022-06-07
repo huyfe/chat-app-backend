@@ -17,6 +17,10 @@ const roomRoute = require('./routes/room');
 
 const User = require('./model/User'); // import model User
 
+// Import utils 
+// const userUtil = require('./utils/users');
+const { userOnline, userOffline, getCurrentUser, getAllUsersOnline, userJoinRoom, userLeave } = require('./utils/users');
+
 
 // Config env 
 dotenv.config();
@@ -41,55 +45,36 @@ const io = socketIO(server, {
 
 io.on('connection', socket => {
     console.log('A new user has connected: ');
-    // console.log(socket.rooms); // Set { <socket.id> }
-    // socket.join("room1");
-    // console.log(socket.rooms); // Set { <socket.id>, "room1" }
 
-    socket.emit("general", "You has connected to server socket");
-    // Listening users emit 
-    socket.on("usersOnline", async (idUser) => {
-        const findAndUpdate = await User.findOneAndUpdate({ _id: idUser },
-            { status: 'online', idSocket: socket.id }
-        );
-        console.log("Id socket user: ", findAndUpdate);
-        const usersOnlineListData = await User.find(
-            { status: 'online' }
-        );
-        const data = usersOnlineListData.map((user) => {
-            return {
-                id: user._id,
-                fullName: user.name,
-                slug: user.slug || null,
-                status: user.status || null,
-                avatar: user.avatar || null,
-            }
-        })
-        io.emit("usersOnline", data);
+    socket.on('joinRoom', ({ idUser, room }) => {
+        const user = userJoinRoom(idUser, socket.id, room);
+        socket.join(user.room);
+        console.log("A user has joined the room: ", user.room);
+        // Broadcast when a user join room 
+        socket.broadcast.to(user.room).emit("room", "Welcome to chat box" + user.room);
+    });
+
+    socket.on('chatMessage', async (message) => {
+        const user = getCurrentUser(socket.id);
+        socket.broadcast.to(user.room).emit("message", message);
+        // console.log(message);
     })
 
+    socket.emit("general", "You has connected to server socket");
+
+    // Listening users online emit 
+    socket.on("usersOnline", async (idUser) => {
+        await userOnline(idUser, socket.id);
+        const usersOnlineListData = await getAllUsersOnline();
+        io.emit("usersOnline", usersOnlineListData);
+    })
+
+    // Listening users disconnected
     socket.on("disconnect", async (reason) => {
         console.log("A user has disconnected: ", socket.id);
-
-
-        const findUser = await User.findOneAndUpdate({ idSocket: socket.id }, { status: 'offline' });
-
-        // console.log("Id socket user: ", findUser.idSocket);
-        // console.log("Id socket: ", socket.id);
-
-
-        const usersOnlineListData = await User.find(
-            { status: 'online' }
-        );
-        const data = usersOnlineListData.map((user) => {
-            return {
-                id: user._id,
-                fullName: user.name,
-                slug: user.slug || null,
-                status: user.status || null,
-                avatar: user.avatar || null,
-            }
-        })
-        io.emit("usersOnline", data);
+        await userOffline(socket.id);
+        const usersOnlineListData = await getAllUsersOnline();
+        io.emit("usersOnline", usersOnlineListData);
     });
 })
 

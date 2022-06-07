@@ -65,10 +65,10 @@ router.get('/me', verify, async (req, res) => {
 /*
 * GET ROOM DETAIL 
 */
+
 router.get('/:id', verify, async (req, res) => {
     const idUser = req.user._id;
     const idRoom = req.params.id;
-
 
     // If get detail then last message is read 
     Room.findById(idRoom)
@@ -79,12 +79,14 @@ router.get('/:id', verify, async (req, res) => {
             if (!room.members.filter(member => member.idMember === idUser)) {
                 throw new Error("Access denied");
             }
+
             const lastMessagesData =
                 room.messagesData[room.messagesData.length - 1];
 
             if (lastMessagesData.idUser !== idUser) {
                 room.messagesData[room.messagesData.length - 1].messages[room.messagesData[room.messagesData.length - 1].messages.length - 1].isRead = true;
             }
+
 
             return room.save();
         })
@@ -93,24 +95,8 @@ router.get('/:id', verify, async (req, res) => {
         })
         .catch((err) => {
             console.log(err);
-            res.status(500).send({ meesage: err });
+            res.status(500).send({ meesage: "Data not found", code: "ERR_NOT_FOUND" });
         })
-
-
-    // try {
-    //     const roomDetail = await Room.findOne({ _id: idRoom }).exec();
-    //     if (!roomDetail) {
-    //         throw new Error("Data not found");
-    //     }
-    //     if (!roomDetail.members.filter(member => member.idMember === idUser)) {
-    //         throw new Error("Access denied");
-    //     }
-
-    //     res.status(200).send(roomDetail);
-    // }
-    // catch (err) {
-    //     res.status(500).send({ meesage: "Data not found" });
-    // }
 });
 
 /*
