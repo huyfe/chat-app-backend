@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const slug = require('mongoose-slug-generator');
 mongoose.plugin(slug);
 const userSchema = new mongoose.Schema({
+    idSocket: {
+        type: String, required: false
+    },
     avatar: { type: String, required: false },
     name: {
         type: String,

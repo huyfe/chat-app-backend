@@ -15,6 +15,9 @@ const postRoute = require('./routes/categories');
 const userRoute = require('./routes/user');
 const roomRoute = require('./routes/room');
 
+const User = require('./model/User'); // import model User
+
+
 // Config env 
 dotenv.config();
 
@@ -25,16 +28,17 @@ mongoose.connect(process.env.DB_CONNECT, () => console.log('connected to db'));
 // Socket io set up
 const server = http.createServer(app);
 const io = socketIO(server, {
-    transports: ['polling'],
+    transports: ["polling", "websocket"],
     cors: {
         cors: {
             origin: "http://localhost:8080",
             credentials: true,
         }
-    }
+    },
+    maxHttpBufferSize: 1e8, pingTimeout: 60000
+
 })
 
-const usersOnline = [];
 io.on('connection', socket => {
     console.log('A new user has connected: ');
     // console.log(socket.rooms); // Set { <socket.id> }
@@ -42,32 +46,54 @@ io.on('connection', socket => {
     // console.log(socket.rooms); // Set { <socket.id>, "room1" }
 
     socket.emit("general", "You has connected to server socket");
-
-    // List users is online 
-    socket.on("usersOnline", (idUser) => {
-        if (!usersOnline.find(id => id === idUser)) {
-            const user = {
-                idSocket: socket.id,
-                idUser: idUser
+    // Listening users emit 
+    socket.on("usersOnline", async (idUser) => {
+        const findAndUpdate = await User.findOneAndUpdate({ _id: idUser },
+            { status: 'online', idSocket: socket.id }
+        );
+        console.log("Id socket user: ", findAndUpdate);
+        const usersOnlineListData = await User.find(
+            { status: 'online' }
+        );
+        const data = usersOnlineListData.map((user) => {
+            return {
+                id: user._id,
+                fullName: user.name,
+                slug: user.slug || null,
+                status: user.status || null,
+                avatar: user.avatar || null,
             }
-            usersOnline.push(user);
-            io.emit("usersOnline", usersOnline);
-            console.log("List users online", usersOnline);
-        }
-
+        })
+        io.emit("usersOnline", data);
     })
 
-    socket.on("disconnect", (reason) => {
+    socket.on("disconnect", async (reason) => {
         console.log("A user has disconnected: ", socket.id);
-        const userIndex = usersOnline.findIndex((user) => user.idSocket === socket.id);
-        if (userIndex !== -1) {
-            usersOnline.splice(userIndex, 1);
-        }
+
+
+        const findUser = await User.findOneAndUpdate({ idSocket: socket.id }, { status: 'offline' });
+
+        // console.log("Id socket user: ", findUser.idSocket);
+        // console.log("Id socket: ", socket.id);
+
+
+        const usersOnlineListData = await User.find(
+            { status: 'online' }
+        );
+        const data = usersOnlineListData.map((user) => {
+            return {
+                id: user._id,
+                fullName: user.name,
+                slug: user.slug || null,
+                status: user.status || null,
+                avatar: user.avatar || null,
+            }
+        })
+        io.emit("usersOnline", data);
     });
 })
 
 app.set('socketio', io); // Set to use io object in every express route
-
 
 // Middleware
 app.use(express.json());

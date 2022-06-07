@@ -18,4 +18,26 @@ router.get('/all', verify, async (req, res) => {
     res.status(200).send(data);
 });
 
+/*
+* GET ALL USERS ONLINE
+*/
+router.get('/users-online', verify, async (req, res) => {
+    const idUser = req.user._id;
+    const allUsers = await User.find(
+        { status: 'online' }
+    );
+    const data = allUsers.map((user) => {
+        return {
+            id: user._id,
+            fullName: user.name,
+            slug: user.slug || null,
+            email: user.email,
+            status: user.status || null,
+            avatar: user.avatar || null,
+        }
+    })
+    res.status(200).send(data);
+});
+
+
 module.exports = router;

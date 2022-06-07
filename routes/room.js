@@ -6,13 +6,14 @@ const moment = require('moment');
 * GET ALL MY ROOM
 */
 router.get('/me', verify, async (req, res) => {
-    const idUser = req.user._id;
+    const idClient = req.user._id;
+
     try {
-        const roomListByIdUser = await Room.find({ "members.idMember": idUser }).exec();
+        const roomListByIdClient = await Room.find({ "members.idMember": idClient }).exec();
 
         // Return slug, avatar, fullName of friend 
         // Return last time of the chat, last text of the chat
-        const roomListByIdUserCustom = roomListByIdUser.map(room => {
+        const roomListByIdUserCustom = roomListByIdClient.map(room => {
             let slug = "";
             let avatar = "";
             let fullName = "";
@@ -22,13 +23,17 @@ router.get('/me', verify, async (req, res) => {
             let idUser = "";
 
             room.members.forEach((member, index) => {
-                if (member.idMember !== idUser) {
+
+                if (member.idMember !== idClient) {
                     slug = member.slug;
                     avatar = member.avatar;
                     fullName = member.fullName;
+
                     idUser = member.idMember;
+                    return;
                 }
             })
+
 
             // Get last time of message of messagesData of room 
             const lastMessages = room.messagesData[room.messagesData.length - 1]; // get last item of array
