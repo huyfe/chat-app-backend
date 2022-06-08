@@ -19,7 +19,7 @@ const User = require('./model/User'); // import model User
 
 // Import utils 
 // const userUtil = require('./utils/users');
-const { userOnline, userOffline, getCurrentUser, getAllUsersOnline, userJoinRoom, userLeave } = require('./utils/users');
+const { userOnline, userOffline, getCurrentUser, getUsersInRooms, getAllUsersOnline, userJoinRoom, userLeave } = require('./utils/users');
 
 
 // Config env 
@@ -52,10 +52,14 @@ io.on('connection', socket => {
         console.log("A user has joined the room: ", user.room);
         // Broadcast when a user join room 
         socket.broadcast.to(user.room).emit("room", { message: "Your friend has joined the room" });
+        const usersInRooms = getUsersInRooms();
+        console.log(usersInRooms);
     });
 
     socket.on('leaveRoom', ({ idUser }) => {
         userLeave(idUser);
+        const usersInRooms = getUsersInRooms();
+        console.log(usersInRooms);
     })
 
     socket.on('chatMessage', async (message) => {

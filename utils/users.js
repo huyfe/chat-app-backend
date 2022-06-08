@@ -38,6 +38,10 @@ function getCurrentUser(idSocket) {
     return usersRoom.find(user => user.idSocket === idSocket);
 }
 
+function getUsersInRooms() {
+    return usersRoom;
+}
+
 function userJoinRoom(idUser, idSocket, room) {
     const user = { id: idUser, idSocket, room };
     usersRoom.push(user);
@@ -59,6 +63,7 @@ module.exports = {
     userOffline,
     getAllUsersOnline,
     getCurrentUser,
+    getUsersInRooms,
     userJoinRoom,
     userLeave,
 }
