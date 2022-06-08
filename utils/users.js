@@ -1,7 +1,6 @@
 const User = require('../model/User'); // import model User
 
 
-const usersRoom = [];
 
 async function userOnline(id, idSocket) {
     const findAndUpdate = await User.findOneAndUpdate({ _id: id },
@@ -31,6 +30,10 @@ async function getAllUsersOnline() {
     return data;
 }
 
+
+
+const usersRoom = [];
+
 function getCurrentUser(idSocket) {
     return usersRoom.find(user => user.idSocket === idSocket);
 }
@@ -42,12 +45,12 @@ function userJoinRoom(idUser, idSocket, room) {
 }
 
 function userLeave(id) {
-    console.log("users room: ", usersRoom);
     const index = usersRoom.findIndex(user => user.id === id);
     if (index !== -1) {
-        return usersRoom.splice(index, 1);
+        console.log("Found user left");
+        usersRoom.splice(index, 1);
     }
-    return null;
+    // return null;
 }
 
 

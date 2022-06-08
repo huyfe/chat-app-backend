@@ -8,6 +8,7 @@ mongoose.plugin(slug);
 const message = new mongoose.Schema({
     text: {
         type: String,
+        default: null,
     },
     time: {
         type: Date,
@@ -25,7 +26,8 @@ const message = new mongoose.Schema({
 const messageSchema = new mongoose.Schema({
     idUser: {
         type: String,
-        required: true,
+        required: false,
+        default: null,
     },
     messages: {
         type: [message],
@@ -44,10 +46,12 @@ const member = new mongoose.Schema({
     avatar: {
         type: String,
         required: false,
+        default: null,
     },
     fullName: {
         type: String,
         required: true,
+        default: null,
     },
     isTyping: {
         type: Boolean,
@@ -63,7 +67,7 @@ const member = new mongoose.Schema({
 const roomSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true,
+        required: false,
         min: 6,
         max: 255,
     },

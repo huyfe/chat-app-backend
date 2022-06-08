@@ -51,12 +51,16 @@ io.on('connection', socket => {
         socket.join(user.room);
         console.log("A user has joined the room: ", user.room);
         // Broadcast when a user join room 
-        socket.broadcast.to(user.room).emit("room", "Welcome to chat box" + user.room);
+        socket.broadcast.to(user.room).emit("room", { message: "Your friend has joined the room" });
     });
+
+    socket.on('leaveRoom', ({ idUser }) => {
+        userLeave(idUser);
+    })
 
     socket.on('chatMessage', async (message) => {
         const user = getCurrentUser(socket.id);
-        socket.broadcast.to(user.room).emit("message", message);
+        socket.broadcast.to(user.room).emit("message", { message, idRoom: user.room });
         // console.log(message);
     })
 

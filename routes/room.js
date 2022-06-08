@@ -1,5 +1,6 @@
 const router = require('express').Router(); // import router to generate routes
 const Room = require('../model/Room'); // import model Room
+const User = require('../model/User'); // import model Room
 const verify = require('./verifyToken'); // import middleware verify auth
 const moment = require('moment');
 /*
@@ -9,11 +10,13 @@ router.get('/me', verify, async (req, res) => {
     const idClient = req.user._id;
 
     try {
-        const roomListByIdClient = await Room.find({ "members.idMember": idClient }).exec();
+        const roomListByIdClient = await Room.find({ "members.idMember": idClient });
+
+        console.log("FOUND ROOM");
 
         // Return slug, avatar, fullName of friend 
         // Return last time of the chat, last text of the chat
-        const roomListByIdUserCustom = roomListByIdClient.map(room => {
+        const roomListByIdUserCustom = roomListByIdClient.filter(room => room.messagesData.length > 0).map(room => {
             let slug = "";
             let avatar = "";
             let fullName = "";
@@ -34,13 +37,13 @@ router.get('/me', verify, async (req, res) => {
                 }
             })
 
-
             // Get last time of message of messagesData of room 
             const lastMessages = room.messagesData[room.messagesData.length - 1]; // get last item of array
             const lastMessage = lastMessages.messages[lastMessages.messages.length - 1]; // get last item of array
             lastTime = lastMessage.time;
             lastText = lastMessage.text;
             isRead = lastMessage.isRead;
+
             const result = {
                 id: room._id,
                 idUser,
@@ -55,6 +58,9 @@ router.get('/me', verify, async (req, res) => {
 
             return result;
         })
+
+
+
         res.status(200).send(roomListByIdUserCustom);
     }
     catch {
@@ -79,14 +85,14 @@ router.get('/:id', verify, async (req, res) => {
             if (!room.members.filter(member => member.idMember === idUser)) {
                 throw new Error("Access denied");
             }
+            if (room.messagesData.length > 0) {
+                const lastMessagesData =
+                    room.messagesData[room.messagesData.length - 1];
 
-            const lastMessagesData =
-                room.messagesData[room.messagesData.length - 1];
-
-            if (lastMessagesData.idUser !== idUser) {
-                room.messagesData[room.messagesData.length - 1].messages[room.messagesData[room.messagesData.length - 1].messages.length - 1].isRead = true;
+                if (lastMessagesData.idUser !== idUser) {
+                    room.messagesData[room.messagesData.length - 1].messages[room.messagesData[room.messagesData.length - 1].messages.length - 1].isRead = true;
+                }
             }
-
 
             return room.save();
         })
@@ -100,6 +106,50 @@ router.get('/:id', verify, async (req, res) => {
 });
 
 /*
+* CREATE ROOM 
+*/
+router.post('/create', verify, async (req, res) => {
+    const idClient = req.user._id;
+    const idFriend = req.body.idFriend;
+
+    const client = await User.findById(idClient);
+    const friend = await User.findById(idFriend);
+
+    const room = new Room();
+    room.members = [{ idMember: idClient, fullName: client.name }, { idMember: idFriend, fullName: friend.name }];
+    room.messagesData = []
+
+    try {
+        const newRoom = await room.save();
+        if (newRoom) {
+            console.log("New room: ", newRoom);
+            res.status(200).send(newRoom);
+        }
+    }
+    catch (err) {
+        res.status(404).send({ message: err });
+        console.log(err);
+    }
+})
+
+/*
+* FIND ROOM OF CLIENT AND FRIEND
+*/
+router.get('/find/:idFriend', verify, async (req, res) => {
+    const idFriend = req.params.idFriend;
+    const idClient = req.user._id;
+
+    // const roomDetail = await Room.find({ "members.idMember": { $all: [idFriend, idClient] } }).exec();
+    const roomDetail = await Room.findOne().all('members.idMember', [idFriend, idClient]);
+    if (roomDetail) {
+        res.status(200).send(roomDetail);
+    }
+    else {
+        res.status(404).send({ message: 'Room not found' });
+    }
+})
+
+/*
 * POST MESSAGESDATA
 */
 router.post('/send-messages/:id', verify, async (req, res) => {
@@ -111,9 +161,9 @@ router.post('/send-messages/:id', verify, async (req, res) => {
         .then((room) => {
             // Nếu tin nhắn cuối cùng là của mình và thời gian của tin nhắn cuối cùng so sánh với
             // thời gian hiện tại không quá 5 phút thì sẽ push tin nhắn vào property messages (room.messagesData.messages)
-            const lastMessagesData =
+            const lastMessagesData = room.messagesData.length &&
                 room.messagesData[room.messagesData.length - 1];
-            const lastMessage =
+            const lastMessage = room.messagesData.length &&
                 lastMessagesData.messages[lastMessagesData.messages.length - 1];
 
             // Get time of text message and compare with current time
@@ -125,36 +175,38 @@ router.post('/send-messages/:id', verify, async (req, res) => {
             const minuteLimit = 5; // Limit 5 minutes
 
             // Nếu tin nhắn cuối là của user gửi lên
-            if (lastMessagesData.idUser === idUser) {
-                if (differenceInMinutes > minuteLimit) {
-                    // Create messageData data to push into room.messagesData array
-                    const messageData = {
-                        idUser: idUser,
-                        messages: [
-                            {
-                                text: text,
-                                time: new Date(),
-                                isReply: false,
-                            },
-                        ],
-                    };
+            if (room.messagesData.length) {
+                if (lastMessagesData.idUser === idUser) {
+                    if (differenceInMinutes > minuteLimit) {
+                        // Create messageData data to push into room.messagesData array
+                        const messageData = {
+                            idUser: idUser,
+                            messages: [
+                                {
+                                    text: text,
+                                    time: new Date(),
+                                    isReply: false,
+                                },
+                            ],
+                        };
 
-                    // Push new messageData into room.messagesData array
-                    room.messagesData.push(messageData);
-                } else {
-                    // Create textMessage data to push into room.messagesData.messages array
-                    const textMessage = {
-                        text: text,
-                        time: new Date(),
-                        isReply: false,
-                    };
-                    room.messagesData[
-                        room.messagesData.length - 1
-                    ].messages.push(textMessage);
+                        // Push new messageData into room.messagesData array
+                        room.messagesData.push(messageData);
+                    } else {
+                        // Create textMessage data to push into room.messagesData.messages array
+                        const textMessage = {
+                            text: text,
+                            time: new Date(),
+                            isReply: false,
+                        };
+                        room.messagesData[
+                            room.messagesData.length - 1
+                        ].messages.push(textMessage);
+                    }
                 }
             }
 
-            if (lastMessagesData.idUser !== idUser) {
+            if (!room.messagesData.length || lastMessagesData.idUser !== idUser) {
                 // Create messageData data to push into room.messagesData array
                 const messageData = {
                     idUser: idUser,
@@ -176,7 +228,7 @@ router.post('/send-messages/:id', verify, async (req, res) => {
             res.status(200).send(room.messagesData);
         })
         .catch(e => {
-            res.status(400).send(e)
+            res.status(400).send("Send message failed")
         });
 })
 
