@@ -32,12 +32,9 @@ mongoose.connect(process.env.DB_CONNECT, () => console.log('connected to db'));
 // Socket io set up
 const server = http.createServer(app);
 const io = socketIO(server, {
-    transports: ["polling", "websocket"],
+    transports: ["websocket"],
     cors: {
-        cors: {
-            origin: "*",
-            credentials: true,
-        }
+        origin: "*",
     },
     maxHttpBufferSize: 1e8, pingTimeout: 60000
 
@@ -92,11 +89,7 @@ app.set('socketio', io); // Set to use io object in every express route
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-    credentials: true,
-    origin: "*",
-
-}));
+app.use(cors());
 
 // Route Middlewares
 app.use('/api/auth', authRoute);
