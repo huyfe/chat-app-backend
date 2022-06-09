@@ -32,7 +32,7 @@ mongoose.connect(process.env.DB_CONNECT, () => console.log('connected to db'));
 // Socket io set up
 const server = http.createServer(app);
 const io = socketIO(server, {
-    transports: ["websocket"],
+    transports: ["polling", "websocket"],
     cors: {
         origin: "*",
     },
