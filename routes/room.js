@@ -12,8 +12,6 @@ router.get('/me', verify, async (req, res) => {
     try {
         const roomListByIdClient = await Room.find({ "members.idMember": idClient });
 
-        console.log("FOUND ROOM");
-
         // Return slug, avatar, fullName of friend 
         // Return last time of the chat, last text of the chat
         const roomListByIdUserCustom = roomListByIdClient.filter(room => room.messagesData.length > 0).map(room => {
