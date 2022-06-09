@@ -35,7 +35,7 @@ const io = socketIO(server, {
     transports: ["polling", "websocket"],
     cors: {
         cors: {
-            origin: "http://localhost:8080",
+            origin: "*",
             credentials: true,
         }
     },
@@ -88,11 +88,13 @@ io.on('connection', socket => {
 
 app.set('socketio', io); // Set to use io object in every express route
 
+
+
 // Middleware
 app.use(express.json());
 app.use(cors({
     credentials: true,
-    origin: true,
+    origin: "*",
 
 }));
 
