@@ -43,6 +43,11 @@ const member = new mongoose.Schema({
         type: String,
         required: true,
     },
+    idSocket: {
+        type: String,
+        required: false,
+        default: null,
+    },
     avatar: {
         type: String,
         required: false,
@@ -54,6 +59,11 @@ const member = new mongoose.Schema({
         default: null,
     },
     isTyping: {
+        type: Boolean,
+        required: false,
+        default: false,
+    },
+    isJoining: {
         type: Boolean,
         required: false,
         default: false,

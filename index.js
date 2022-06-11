@@ -43,22 +43,23 @@ const io = socketIO(server, {
 io.on('connection', socket => {
     console.log('A new user has connected: ');
 
-    socket.on('joinRoom', ({ idUser, room }) => {
-        const user = userJoinRoom(idUser, socket.id, room);
+    socket.on('joinRoom', async ({ idUser, room }) => {
+        console.log("A user has joined the room");
+        const user = await userJoinRoom(idUser, socket.id, room);
         socket.join(user.room);
-        console.log("A user has joined the room: ", user.room);
         // Broadcast when a user join room 
         socket.broadcast.to(user.room).emit("room", { message: "Your friend has joined the room" });
         // const usersInRooms = getUsersInRooms();
         // console.log(usersInRooms);
     });
 
-    socket.on('leaveRoom', ({ idUser }) => {
-        userLeave(idUser);
+    socket.on('leaveRoom', async ({ idUser, room }) => {
+        console.log("A user has left the room: ", idUser, room);
+        await userLeave(idUser, room);
+        socket.broadcast.to(room).emit("room", { message: "Your friend has left the room" });
+
         // const usersInRooms = getUsersInRooms();
         // console.log(usersInRooms);
-        console.log("A user has left the room: ", idUser);
-
     })
 
     socket.on('chatMessage', async (message) => {
@@ -73,8 +74,9 @@ io.on('connection', socket => {
     socket.on("usersOnline", async (idUser) => {
         await userOnline(idUser, socket.id);
         const usersOnlineListData = await getAllUsersOnline();
-        console.log("User is online");
-        io.emit("usersOnline", usersOnlineListData);
+        console.log("A user has online");
+        // io.emit("usersOnline", usersOnlineListData);
+        socket.broadcast.emit("usersOnline", { usersOnlineListData, message: { type: "bot", title: "Notification", text: "A user has online now!" } });
     })
 
     // Listening users disconnected
@@ -82,7 +84,7 @@ io.on('connection', socket => {
         console.log("A user has disconnected: ", socket.id);
         await userOffline(socket.id);
         const usersOnlineListData = await getAllUsersOnline();
-        io.emit("usersOnline", usersOnlineListData);
+        socket.broadcast.emit("usersOnline", { usersOnlineListData, message: { type: "bot", title: "Notification", text: "A user has offline!" } });
     });
 })
 
