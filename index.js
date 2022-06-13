@@ -36,7 +36,7 @@ const io = socketIO(server, {
     cors: {
         origin: "*",
     },
-    maxHttpBufferSize: 2e8, pingTimeout: 60000
+    maxHttpBufferSize: 1e8, pingTimeout: 60000
 
 })
 
