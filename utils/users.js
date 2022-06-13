@@ -4,13 +4,13 @@ const Room = require('../model/Room'); // import model User
 
 
 async function userOnline(id, idSocket) {
-    return User.findOneAndUpdate({ _id: id },
+    return await User.findOneAndUpdate({ _id: id },
         { status: 'online', idSocket: idSocket }
     );
 }
 
 async function userOffline(idSocket) {
-    return User.findOneAndUpdate({ idSocket: idSocket }, { status: 'offline' });
+    return await User.findOneAndUpdate({ idSocket: idSocket }, { status: 'offline' });
 }
 
 async function getAllUsersOnline() {

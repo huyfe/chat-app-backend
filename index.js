@@ -36,7 +36,7 @@ const io = socketIO(server, {
     cors: {
         origin: "*",
     },
-    maxHttpBufferSize: 1e8, pingTimeout: 60000
+    maxHttpBufferSize: 2e8, pingTimeout: 60000
 
 })
 
@@ -71,12 +71,11 @@ io.on('connection', socket => {
     socket.emit("general", "You has connected to server socket");
 
     // Listening users online emit 
-    socket.on("usersOnline", async (idUser) => {
+    socket.on("usersOnline", async (idUser, message) => {
         await userOnline(idUser, socket.id);
         const usersOnlineListData = await getAllUsersOnline();
         console.log("A user has online");
-        // io.emit("usersOnline", usersOnlineListData);
-        socket.broadcast.emit("usersOnline", { usersOnlineListData, message: { type: "bot", title: "Notification", text: "A user has online now!" } });
+        socket.broadcast.emit("usersOnline", { usersOnlineListData, message: { type: "bot", title: "Notification", text: "A user has online now!" }, text: message });
     })
 
     // Listening users disconnected
